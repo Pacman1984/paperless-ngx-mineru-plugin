@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# local secrets / environment
+.env
+*.env
+!*.env.example
+!.env.example
+tests/e2e/consume/

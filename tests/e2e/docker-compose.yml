@@ -1,0 +1,37 @@
+# End-to-end check: real Paperless-ngx 3.3.1 + plugin + your MinerU server.
+#
+#   cp tests/e2e/.env.example tests/e2e/.env   # set PAPERLESS_MINERU_ENDPOINT
+#   bash tests/e2e/run-e2e.sh
+#
+# Throwaway stack: SQLite, no ports exposed, data in named volumes that
+# run-e2e.sh removes again.
+name: paperless-mineru-e2e
+
+services:
+  redis:
+    image: docker.io/library/redis:8
+
+  paperless:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+      args:
+        PAPERLESS_TAG: ${PAPERLESS_TAG:-3.3.1}
+    image: paperless-ngx-mineru:e2e
+    depends_on: [redis]
+    volumes:
+      - data:/usr/src/paperless/data
+      - media:/usr/src/paperless/media
+      - ./consume:/usr/src/paperless/consume
+    environment:
+      PAPERLESS_REDIS: redis://redis:6379
+      PAPERLESS_OCR_LANGUAGE: deu
+      PAPERLESS_CONSUMER_POLLING: "2"
+      PAPERLESS_MINERU_ENDPOINT: ${PAPERLESS_MINERU_ENDPOINT:?set PAPERLESS_MINERU_ENDPOINT in tests/e2e/.env}
+      PAPERLESS_MINERU_BACKEND: ${PAPERLESS_MINERU_BACKEND:-}
+      PAPERLESS_MINERU_EFFORT: ${PAPERLESS_MINERU_EFFORT:-}
+      PAPERLESS_LOGGING_DIR: /usr/src/paperless/data/log
+
+volumes:
+  data:
+  media:

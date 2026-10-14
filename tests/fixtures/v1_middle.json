@@ -1,0 +1,38 @@
+{
+  "metadata": {"file_suffix": "pdf", "producer": {"name": "mineru", "version": "4.0.12"}},
+  "extensions": {"mineru": {"tier": "standard", "parse_mode": "ocr"}},
+  "pages": [
+    {
+      "page_idx": 0,
+      "blocks": [
+        {"type": "doc_title", "index": 0, "level": 1, "bbox": [0.09, 0.077, 0.55, 0.105],
+         "content": [{"type": "text", "content": "Rechnung Nr. 2026-0815", "styles": ["bold"]}]},
+        {"type": "text", "index": 1, "bbox": [0.09, 0.15, 0.78, 0.25],
+         "content": [
+           {"type": "text", "content": "Sehr geehrte Damen und Herren, für die gelieferte Ware erlauben wir uns, folgenden Betrag in Rechnung zu stellen. Siehe "},
+           {"type": "hyperlink", "url": "https://example.com", "content": [{"type": "text", "content": "Portal"}]},
+           {"type": "text", "content": "."}
+         ]},
+        {"type": "table", "index": 2, "bbox": [0.09, 0.3, 0.9, 0.4],
+         "content": [
+           {"type": "table_caption", "content": [{"type": "text", "content": "Positionen"}]},
+           {"type": "table_body", "bbox": [0.09, 0.32, 0.9, 0.4],
+            "content": "<table><tr><th>Artikel</th><th>Preis</th></tr><tr><td>Schraube</td><td>1,00 EUR</td></tr></table>"}
+         ]},
+        {"type": "image", "index": 3, "bbox": [0.1, 0.5, 0.4, 0.7],
+         "content": [{"type": "image_body", "content": "A company logo"}]},
+        {"type": "equation", "index": 4, "bbox": [0.1, 0.72, 0.4, 0.75], "content": "E = mc^2"}
+      ]
+    },
+    {
+      "page_idx": 1,
+      "blocks": [
+        {"type": "text", "index": 0, "bbox": [0.1, 0.1, 0.9, 0.12],
+         "content": [{"type": "text", "content": "Seite zwei"}]}
+      ]
+    }
+  ],
+  "is_full_document": true,
+  "schema": "docvortex.middle",
+  "schema_version": "2.0"
+}

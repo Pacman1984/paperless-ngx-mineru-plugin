@@ -1,0 +1,27 @@
+# Drop-in override for the official Paperless-ngx docker-compose stack.
+# Put it next to your docker-compose.yml; `docker compose` merges it
+# automatically. Service name "webserver" matches the upstream examples -
+# adjust if yours differs.
+#
+# Option A (recommended): custom image with the plugin baked in.
+services:
+  webserver:
+    image: paperless-ngx-mineru:3.3.1
+    build:
+      # Build straight from GitHub (or point context at a local checkout).
+      context: https://github.com/Pacman1984/paperless-ngx-mineru-plugin.git#main
+      dockerfile: docker/Dockerfile
+      args:
+        PAPERLESS_TAG: "3.3.1"
+    # The PAPERLESS_MINERU_* settings live in docker-compose.env (env_file).
+
+# Option B: keep the stock image and install at container start instead.
+# Remove the block above and use this one:
+#
+# services:
+#   webserver:
+#     image: ghcr.io/paperless-ngx/paperless-ngx:3.3.1
+#     volumes:
+#       - ./custom-cont-init.d:/custom-cont-init.d:ro
+#     environment:
+#       PAPERLESS_MINERU_PIP_SPEC: git+https://github.com/Pacman1984/paperless-ngx-mineru-plugin.git@main
