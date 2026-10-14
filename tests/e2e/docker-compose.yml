@@ -25,6 +25,8 @@ services:
       - ./consume:/usr/src/paperless/consume
     environment:
       PAPERLESS_REDIS: redis://redis:6379
+      # run-e2e.sh exports a random throwaway key; Paperless >= 3.3 refuses to start without one.
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?run via run-e2e.sh or export PAPERLESS_SECRET_KEY}
       PAPERLESS_OCR_LANGUAGE: deu
       PAPERLESS_CONSUMER_POLLING: "2"
       PAPERLESS_MINERU_ENDPOINT: ${PAPERLESS_MINERU_ENDPOINT:?set PAPERLESS_MINERU_ENDPOINT in tests/e2e/.env}

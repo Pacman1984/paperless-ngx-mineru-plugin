@@ -7,6 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 compose=(docker compose --env-file .env -f docker-compose.yml)
 [[ -f .env ]] || { echo "tests/e2e/.env missing - copy .env.example"; exit 2; }
+export PAPERLESS_SECRET_KEY="${PAPERLESS_SECRET_KEY:-$(uv run --project ../.. python -c 'import secrets; print(secrets.token_urlsafe(48))')}"
 
 cleanup() {
     if [[ "${KEEP:-0}" != "1" ]]; then
@@ -48,7 +49,7 @@ done
 "${compose[@]}" logs paperless 2>&1 | grep -E "third-party parser|MinerU|Parser:" | tail -10
 
 echo "== verifying document"
-"${compose[@]}" exec -T paperless python3 /usr/src/paperless/src/manage.py shell -c '
+"${compose[@]}" exec -T paperless python3 manage.py shell -c '
 import subprocess
 from documents.models import Document
 d = Document.objects.get(original_filename="e2e-rechnung.pdf")
@@ -58,7 +59,9 @@ assert d.has_archive_version, "no archive PDF"
 txt = subprocess.run(["pdftotext", str(d.archive_path), "-"], capture_output=True, text=True).stdout
 print("archive text layer:", " ".join(txt.split())[:200])
 assert "1.234,56" in txt, "archive PDF has no searchable text layer"
-pdfa = subprocess.run(["sh", "-c", f"strings {d.archive_path} | grep -c pdfaid:part || true"], capture_output=True, text=True).stdout.strip()
-print("PDF/A markers:", pdfa)
+import pikepdf
+with pikepdf.open(d.archive_path) as pdf:
+    meta = pdf.open_metadata()
+    print("archive PDF/A:", meta.get("pdfaid:part"), meta.get("pdfaid:conformance"))
 print("E2E OK")
 '
