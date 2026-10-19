@@ -25,20 +25,14 @@ and the archive version keep working in Paperless.
 ## How it works
 
 ```mermaid
-flowchart TD
-    A["Paperless consumer"] --> B["MineruDocumentParser.parse()"]
-    B --> C{"Image?"}
-    C -- yes --> D["Wrap in PDF with img2pdf (local)"]
-    C -- PDF --> E{"Born-digital PDF and<br/>no archive wanted?"}
-    E -- yes --> X["Use the embedded text, done"]
-    E -- no --> F
-    D --> F["MinerU server<br/>POST /tasks, poll, GET /tasks/{id}/result"]
-    F --> G["Markdown + middle_json<br/>(text and bounding boxes)"]
-    G --> H["Content: Markdown or plain text"]
-    G --> I["Archive: original pages +<br/>invisible text at MinerU's boxes<br/>(pages with text left untouched)"]
-    I --> J{"OUTPUT_TYPE pdfa*?"}
-    J -- yes --> K["PDF/A via OCRmyPDF,<br/>no OCR engine"]
-    J -- no --> L["Plain PDF"]
+flowchart LR
+    A["Paperless<br/>consumer"] --> B{"Image?"}
+    B -- yes --> C["img2pdf"]
+    B -- PDF --> D["MinerU server<br/>async task + poll"]
+    C --> D
+    D --> E["Content<br/>Markdown"]
+    D --> F["Archive<br/>original pages +<br/>invisible text layer"]
+    F --> G["PDF/A<br/>OCRmyPDF, no OCR"]
 ```
 
 The parser registers with score `20`, which beats the built-in Tesseract parser (`10`). It declares
