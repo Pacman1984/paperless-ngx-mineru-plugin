@@ -163,7 +163,9 @@ action matches the document.
 
 - **Text placement precision.** MinerU 2.x/3.x returns line-level boxes, so search highlights land on
   the exact line. MinerU ≥ 4.0 returns block-level boxes only. There the text is wrapped evenly inside
-  each block, so search works but highlights are approximate.
+  each block, so search works but highlights are approximate. The same wrapping applies to legacy
+  "lines" too narrow for their text (MinerU 3.x `hybrid-engine` sometimes returns a whole paragraph as
+  one line), so text extractors keep the word gaps.
 - **Mixed PDFs.** Pages that already have a text layer (20+ characters) are not overlaid again, which
   avoids duplicate hits. MinerU still parses the whole document for the content.
 - **OCR modes.** Paperless' `PAPERLESS_OCR_MODE` (`skip`/`redo`/`force`) and deskew/rotate/clean

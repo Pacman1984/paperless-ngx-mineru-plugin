@@ -7,7 +7,7 @@ from pdfminer.high_level import extract_pages, extract_text
 from pdfminer.layout import LTChar, LTTextContainer, LTTextLine
 
 from paperless_mineru.layout import TextItem, extract_items
-from paperless_mineru.textlayer import add_text_layer, wrap_block
+from paperless_mineru.textlayer import add_text_layer, fits_one_line, wrap_block
 
 
 def _lines(pdf_path):
@@ -155,3 +155,60 @@ def test_wrap_block():
     many = wrap_block("a " * 200, 200, 200)
     assert len(many) > 3
     assert wrap_block("Zeile eins\nZeile zwei", 400, 30) == ["Zeile eins", "Zeile zwei"]
+
+
+def test_fits_one_line():
+    # 10 glyphs of 0.5 em on a 20 pt line are 100 pt wide; half of that is the limit.
+    assert fits_one_line("a" * 10, 100, 20)
+    assert fits_one_line("a" * 10, 50, 20)
+    assert not fits_one_line("a" * 10, 49, 20)
+
+
+_PARAGRAPH = (
+    "Was ist ein Streifenfundament? Ein Streifenfundament ist ein langgestrecktes Fundament unter "
+    "tragenden Wänden. Es verteilt die Lasten der Wand gleichmäßig auf den Baugrund und wird meist "
+    "aus Beton oder Stahlbeton hergestellt. Die Breite richtet sich nach der Last und nach der "
+    "Tragfähigkeit des Bodens."
+)
+
+
+def _legacy_middle(bbox, text):
+    line = {"bbox": bbox, "spans": [{"type": "text", "content": text}]}
+    page = {"page_idx": 0, "page_size": [595, 842], "para_blocks": [{"bbox": bbox, "lines": [line]}]}
+    return {"pdf_info": [page]}
+
+
+def _hscales(pdf_path):
+    with pikepdf.open(pdf_path) as pdf:
+        stream = pikepdf.parse_content_stream(pdf.pages[0])
+        return [float(operands[0]) for operands, op in stream if op == pikepdf.Operator("Tz")]
+
+
+def test_paragraph_sized_legacy_line_is_wrapped(tmp_path):
+    # MinerU 3.x hybrid-engine can return a whole paragraph as one legacy line.
+    # As one line it would be squeezed to ~10% width and lose its word gaps.
+    bbox = [76, 300, 152, 405]
+    items = extract_items(_legacy_middle(bbox, _PARAGRAPH))
+    assert len(items) == 1 and items[0].single_line
+    src = _blank_pdf(tmp_path / "in.pdf")
+    out = tmp_path / "out.pdf"
+    add_text_layer(src, items, out)
+
+    lines = _lines(out)
+    assert len(lines) > 5
+    for line in lines:
+        x0, y0, x1, y1 = line.bbox
+        assert x0 >= bbox[0] - 1 and x1 <= bbox[2] + 1
+        assert y0 >= 842 - bbox[3] - 1 and y1 <= 842 - bbox[1] + 1
+    assert min(_hscales(out)) >= 50
+    assert " ".join(extract_text(str(out)).split()) == _PARAGRAPH
+
+
+def test_normal_legacy_line_stays_single(tmp_path):
+    text = "Musterfirma GmbH, Beispielstraße 12, 12345 Musterstadt"
+    items = extract_items(_legacy_middle([50, 128, 458, 149], text))
+    src = _blank_pdf(tmp_path / "in.pdf")
+    out = tmp_path / "out.pdf"
+    add_text_layer(src, items, out)
+    assert [line.get_text().strip() for line in _lines(out)] == [text]
+    assert len(_hscales(out)) == 1
