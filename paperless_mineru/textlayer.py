@@ -27,6 +27,11 @@ logger = logging.getLogger("paperless.parsing.mineru")
 _GLYPH_WIDTH = 0.5  # em, must match /DW below
 _ASCENT = 0.8  # baseline sits at 80% of the line height
 _LINE_SPACING = 1.15
+# A "line" that would need a narrower horizontal scale than this is really a
+# paragraph (MinerU 3.x hybrid-engine sometimes returns one as a single legacy
+# line). Squeezed into one line, poppler/xpdf lose the word gaps, so such
+# items are wrapped like blocks instead.
+_MIN_LINE_HSCALE = 0.5
 
 
 def _font_program() -> bytes | None:
@@ -187,15 +192,22 @@ def _line_ops(geo: _PageGeometry, font: str, text: str, x0: float, y0: float, x1
     )
 
 
+def fits_one_line(text: str, width: float, height: float) -> bool:
+    """Whether ``text`` fits one ``width`` x ``height`` line at ``_MIN_LINE_HSCALE`` or wider."""
+    return width >= _MIN_LINE_HSCALE * len(text) * _GLYPH_WIDTH * height
+
+
 def page_ops(geo: _PageGeometry, font: str, items: Iterable[TextItem]) -> str:
     ops: list[str] = []
     for item in items:
         x0, y0, x1, y1 = item.bbox
-        if item.single_line:
-            ops.append(_line_ops(geo, font, " ".join(item.text.split()), x0, y0, x1, y1))
-            continue
         width = (x1 - x0) * geo.disp_w
         height = (y1 - y0) * geo.disp_h
+        if item.single_line:
+            text = " ".join(item.text.split())
+            if fits_one_line(text, width, height):
+                ops.append(_line_ops(geo, font, text, x0, y0, x1, y1))
+                continue
         lines = wrap_block(item.text, width, height)
         if not lines:
             continue
